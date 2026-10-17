@@ -148,6 +148,15 @@ public class NFA {
         return result;
     }
 
+    /** All states reachable by reading a character that does not appear in the regex (only '.' transitions). */
+    public Set<Integer> moveOther(Set<Integer> states) {
+        Set<Integer> result = new TreeSet<>();
+        for (int q : states) {
+            if (symbol.get(q) == ANY) result.add(symbolTarget.get(q));
+        }
+        return result;
+    }
+
     /** Characters that appear explicitly on a transition (ANY is not included). */
     public Set<Character> alphabet() {
         Set<Character> chars = new TreeSet<>();
