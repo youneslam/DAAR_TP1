@@ -1,0 +1,40 @@
+== Construction (50 batches of 100 builds per regex) ==
+Sargon                         NFA  12  DFA   7  min   7   build    24.29 us +- 44.95
+S(a|g|r)*on                    NFA  18  DFA   7  min   4   build    26.18 us +- 6.31
+(B|b)abylon|Assyria            NFA  34  DFA  16  min  14   build    23.37 us +- 12.95
+th(e|is|at)                    NFA  18  DFA   8  min   6   build     8.00 us +- 3.01
+h.s                            NFA   6  DFA   4  min   4   build     5.08 us +- 5.58
+a(b|c|d)*e                     NFA  16  DFA   6  min   3   build    23.96 us +- 10.02
+q.*z                           NFA   8  DFA   4  min   3   build     7.80 us +- 4.25
+((a|e|i|o|u)(n|r|s|t))*ing     NFA  40  DFA  12  min   5   build    84.98 us +- 27.39
+Ch(a|e)p.*(I|V|X)              NFA  26  DFA  10  min   6   build    50.94 us +- 10.38
+(sink 468000)
+
+== Search on babylon.txt, 13302 lines (30 runs) ==
+Sargon                         DFA    1.55 ms +-  0.14   java.util.regex    3.68 ms +-  0.54
+S(a|g|r)*on                    DFA    2.25 ms +-  0.70   java.util.regex    3.76 ms +-  0.12
+(B|b)abylon|Assyria            DFA    2.04 ms +-  0.48   java.util.regex   18.68 ms +-  1.11
+th(e|is|at)                    DFA    1.65 ms +-  0.30   java.util.regex    3.71 ms +-  0.32
+h.s                            DFA    2.53 ms +-  0.33   java.util.regex    4.59 ms +-  0.51
+a(b|c|d)*e                     DFA    2.58 ms +-  0.26   java.util.regex    6.45 ms +-  0.34
+q.*z                           DFA    1.57 ms +-  0.09   java.util.regex    3.73 ms +-  0.45
+((a|e|i|o|u)(n|r|s|t))*ing     DFA    7.20 ms +-  0.78   java.util.regex   57.54 ms +- 11.28
+Ch(a|e)p.*(I|V|X)              DFA    1.66 ms +-  0.19   java.util.regex    3.96 ms +-  0.58
+(sink 2221100)
+
+== Search time vs text size (10 sizes, 10 runs) ==
+size  1/10:    33203 lines,   1199952 chars
+size  2/10:    66407 lines,   2399105 chars
+size  3/10:    99611 lines,   3593628 chars
+size  4/10:   132815 lines,   4794655 chars
+size  5/10:   166019 lines,   5986844 chars
+size  6/10:   199223 lines,   7186381 chars
+size  7/10:   232427 lines,   8373659 chars
+size  8/10:   265631 lines,   9571658 chars
+size  9/10:   298835 lines,  10763555 chars
+size 10/10:   332039 lines,  11966950 chars
+(sink 15572940)
+
+== Distribution of 300 runs of "S(a|g|r)*on" on babylon.txt ==
+DFA 2.27 ms +- 0.54   java.util.regex 3.75 ms +- 0.65
+(sink 19200)
