@@ -23,7 +23,7 @@ public class DFA {
     private final int[] classOf;        // classOf[c] = class of ASCII character c
     private final int[][] transitions;  // transitions[state][class] = next state or DEAD
     private final boolean[] accepting;
-    private final List<Set<Integer>> subsets; // NFA states behind each DFA state (for display)
+    private final List<Set<Integer>> subsets; // states this one was built from (for display)
     private final int start = 0;
 
     public DFA(NFA nfa) {
@@ -84,6 +84,18 @@ public class DFA {
         subsets = sets;
     }
 
+    /**
+     * Builds a DFA with the same character classes as model but new states.
+     * Used by DFAMinimizer: state 0 must be the start state, subsets[i] = states of model merged into i.
+     */
+    DFA(DFA model, int[][] transitions, boolean[] accepting, List<Set<Integer>> subsets) {
+        this.alphabet = model.alphabet;
+        this.classOf = model.classOf;
+        this.transitions = transitions;
+        this.accepting = accepting;
+        this.subsets = subsets;
+    }
+
     // ---- Accessors used by the minimization and the matcher ----
 
     public int getStart() {
@@ -133,7 +145,7 @@ public class DFA {
         sb.append("DFA: ").append(size()).append(" states, start = ").append(start).append('\n');
         sb.append(String.format("%7s", "state"));
         for (char c : alphabet) sb.append(String.format("%4s", c));
-        sb.append(String.format("%7s", "other")).append("   NFA states\n");
+        sb.append(String.format("%7s", "other")).append("   built from\n");
         for (int d = 0; d < size(); d++) {
             sb.append(String.format("%6d%s", d, accepting[d] ? "*" : " "));
             for (int k = 0; k < classCount(); k++) {
