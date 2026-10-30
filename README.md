@@ -1,11 +1,27 @@
 # DAAR TP1 — Clone of `egrep`
 
 Java clone of `egrep` supporting letters, `.`, concatenation, `|`, `*` and parentheses.
+The search always uses the minimal DFA. `KMP.java` (Knuth-Morris-Pratt) and `BoyerMoore.java` are only
+used by the tests and the performance comparison on regexes made only of letters (`results/literal_search.png`).
 
 ## Requirements
 
 - Java 11 or later
 - For the tests only: bash (Git Bash on Windows), `curl`, `grep`, Python 3 with `matplotlib`
+
+## With make
+
+```bash
+make                                                        # builds the binary egrep.jar
+make run REGEX="S(a|g|r)*on" FILE=testbeds/babylon.txt      # or: java -jar egrep.jar "<regex>" <file>
+make testbeds                                               # downloads the test files
+make test                                                   # correctness tests
+make compare                                                # comparison with grep -E
+make benchmark                                              # performance tests, results in results/
+make clean
+```
+
+The commands below do the same thing without make.
 
 ## Compile
 

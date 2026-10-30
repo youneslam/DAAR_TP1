@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 mkdir -p out results
 javac -encoding UTF-8 -d out src/*.java test/*.java
 
-for experiment in construction regex size distribution; do
+for experiment in construction regex size distribution literal; do
     java -Xmx2g -cp out Benchmark testbeds results "$experiment"
 done | tee results/benchmark_output.txt
 

@@ -127,9 +127,34 @@ def time_distribution():
     fig.savefig(RESULTS / "time_distribution.png", dpi=150)
 
 
+def literal_search():
+    rows = read("literal_search.csv")
+    regexes = list(dict.fromkeys(r["regex"] for r in rows))
+    engines = {"DFA": "#2a6fdb", "KMP": "#2e9e6b", "Boyer-Moore": "#8e44ad", "java.util.regex": "#e07b39"}
+    x = range(len(regexes))
+    width = 0.2
+
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    for i, (engine, color) in enumerate(engines.items()):
+        data = {r["regex"]: r for r in rows if r["engine"] == engine}
+        means = [float(data[g]["mean_ms"]) for g in regexes]
+        stds = [float(data[g]["std_ms"]) for g in regexes]
+        ax.bar([p + (i - 1.5) * width for p in x], means, width, yerr=error_bars(means, stds),
+               capsize=3, label=engine, color=color)
+    ax.set_xticks(list(x))
+    ax.set_xticklabels([f"{g} ({len(g)})" for g in regexes], rotation=30, ha="right")
+    ax.set_ylabel("search time (ms), mean ± std")
+    ax.set_title("Regexes made only of letters (length in parentheses), on the 7 testbeds put together")
+    ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(RESULTS / "literal_search.png", dpi=150)
+
+
 if __name__ == "__main__":
     construction()
     search_by_regex()
     search_vs_size()
     time_distribution()
+    literal_search()
     print("Charts written to", RESULTS)

@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
  * 1. Hand-written cases (expected result known).
  * 2. Random regexes and random lines, compared with java.util.regex (used as a reference).
  * 3. Every line of every testbed, compared with java.util.regex.
+ * 4. KMP and Boyer-Moore compared with String.indexOf, and with the DFA on every testbed line.
  *
  * Usage: java -cp out CorrectnessTest [testbeds directory]
  */
@@ -26,6 +27,8 @@ public class CorrectnessTest {
         handWrittenCases();
         randomCases(2000, 50, 42);
         testbedCases(dir);
+        stringSearchCases(20000, 7);
+        literalTestbedCases(dir);
         System.out.println(failures == 0 ? "\nALL TESTS PASSED" : "\n" + failures + " FAILURE(S)");
         System.exit(failures == 0 ? 0 : 1);
     }
@@ -147,6 +150,63 @@ public class CorrectnessTest {
                 }
                 if (mismatches > 0) failures++;
                 System.out.printf("%-26s %-30s %10d %10d%n", file.getName(), regex, matches, mismatches);
+            }
+        }
+    }
+
+    // ---- 4. KMP and Boyer-Moore ----
+
+    /** Few letters and short words, so that there are many partial matches: that is where the tables matter. */
+    private static void stringSearchCases(int count, long seed) {
+        System.out.println("\n== KMP and Boyer-Moore vs String.indexOf ==");
+        Random random = new Random(seed);
+        String[] fixed = {"a", "aa", "aaa", "ab", "aab", "abab", "abcab", "abaabab", "aabaaab"};
+        for (String p : fixed) {
+            for (String t : new String[] {"", "a", "aaaa", "abababab", "aabaabaaab", "xabaababy", "ba", "aaab"}) {
+                checkStringSearch(p, t);
+            }
+        }
+        for (int i = 0; i < count; i++) {
+            String p = randomLine(random, 6);
+            if (p.isEmpty()) p = "a";
+            checkStringSearch(p, randomLine(random, 40));
+        }
+        // Accented characters in the text: Boyer-Moore must treat them as letters that are not in the word
+        checkStringSearch("ab", "éabé");
+        checkStringSearch("ab", "ééé");
+        System.out.println((fixed.length * 8 + count + 2) + " (pattern, text) pairs checked");
+    }
+
+    private static void checkStringSearch(String p, String t) {
+        int expected = t.indexOf(p);
+        int kmp = new KMP(p).indexOf(t);
+        int bm = new BoyerMoore(p).indexOf(t);
+        check(kmp == expected, "KMP(\"" + p + "\").indexOf(\"" + t + "\") = " + kmp + ", expected " + expected);
+        check(bm == expected, "BoyerMoore(\"" + p + "\").indexOf(\"" + t + "\") = " + bm + ", expected " + expected);
+    }
+
+    static final String[] LITERAL_REGEXES = {"Sargon", "the", "Babylon", "e", "Project Gutenberg", "whale", "zzz"};
+
+    private static void literalTestbedCases(String dir) throws IOException {
+        System.out.println("\n== Literal regexes on testbeds: KMP and Boyer-Moore vs DFA (every line) ==");
+        java.io.File[] files = new java.io.File(dir).listFiles((d, name) -> name.endsWith(".txt"));
+        if (files == null || files.length == 0) return; // already reported by testbedCases
+        java.util.Arrays.sort(files);
+        System.out.printf("%-26s %-20s %10s %10s%n", "file", "regex", "matches", "mismatches");
+        for (java.io.File file : files) {
+            List<String> lines = readLines(file.getPath());
+            for (String regex : LITERAL_REGEXES) {
+                Matcher dfa = new Matcher(regex);
+                KMP kmp = new KMP(regex);
+                BoyerMoore bm = new BoyerMoore(regex);
+                int matches = 0, mismatches = 0;
+                for (String line : lines) {
+                    boolean expected = dfa.find(line);
+                    if (expected) matches++;
+                    if (kmp.find(line) != expected || bm.find(line) != expected) mismatches++;
+                }
+                if (mismatches > 0) failures++;
+                System.out.printf("%-26s %-20s %10d %10d%n", file.getName(), regex, matches, mismatches);
             }
         }
     }

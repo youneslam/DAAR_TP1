@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.function.IntSupplier;
+import java.util.function.Predicate;
 
 /**
  * Performance tests. Writes CSV files into results/, drawn by scripts/plot_results.py.
@@ -17,13 +18,15 @@ import java.util.function.IntSupplier;
  * 3. search_vs_size.csv    : search time against text size (prefixes of all testbeds put together,
  *                            lines shuffled so that every prefix has the same kind of content)
  * 4. time_distribution.csv : every measured time of many runs of one search (frequency diagram)
+ * 5. literal_search.csv    : regexes made only of letters, of growing length, on all testbeds put together:
+ *                            minimal DFA vs KMP vs Boyer-Moore vs java.util.regex
  *
  * Texts are loaded in memory first: only the search is timed, not the file reading.
  * Each measure is repeated after a JIT warm-up; we keep the mean and the standard deviation.
  * scripts/run_benchmarks.sh runs each experiment in its own JVM so they do not influence each other.
  *
  * Usage: java -cp out Benchmark [testbeds directory] [results directory] [experiment]
- *        experiment = construction | regex | size | distribution | all (default)
+ *        experiment = construction | regex | size | distribution | literal | all (default)
  */
 public class Benchmark {
 
@@ -33,6 +36,10 @@ public class Benchmark {
     };
     static final String[] SIZE_REGEXES = {"Sargon", "S(a|g|r)*on", "h.s", "q.*z"};
     static final String DISTRIBUTION_REGEX = "S(a|g|r)*on";
+    static final String[] LITERAL_REGEXES = {
+            "e", "th", "the", "King", "Sargon", "Babylon", "Assyrian", "white whale", "Project Gutenberg",
+            "the Project Gutenberg License", "Project Gutenberg Literary Archive Foundation",
+    };
 
     static final int WARMUP = 20;
     static final int BATCH = 100;
@@ -52,6 +59,7 @@ public class Benchmark {
         if (all || experiment.equals("regex")) searchByRegex(results + "/search_by_regex.csv", babylon, 30);
         if (all || experiment.equals("size")) searchVsSize(results + "/search_vs_size.csv", loadCorpus(testbeds), 10, 10);
         if (all || experiment.equals("distribution")) timeDistribution(results + "/time_distribution.csv", babylon, 300);
+        if (all || experiment.equals("literal")) literalSearch(results + "/literal_search.csv", loadCorpus(testbeds), 20);
         System.out.println("(sink " + sink + ")");
     }
 
@@ -158,11 +166,49 @@ public class Benchmark {
         System.out.printf(Locale.ROOT, "DFA %.2f ms +- %.2f   java.util.regex %.2f ms +- %.2f%n", mean(a), std(a), mean(b), std(b));
     }
 
+    // ---- 5. Literal regexes: DFA vs KMP vs Boyer-Moore ----
+
+    static void literalSearch(String csv, List<String> lines, int reps) throws IOException {
+        System.out.println("\n== Literal regexes on all testbeds, " + lines.size() + " lines (" + reps + " runs) ==");
+        String[] names = {"DFA", "KMP", "Boyer-Moore"};
+        try (PrintWriter out = new PrintWriter(csv)) {
+            out.println("regex,length,engine,matching_lines,mean_ms,std_ms");
+            for (String regex : LITERAL_REGEXES) {
+                // The same search done three ways, in the same order as names
+                List<Predicate<String>> engines = List.of(new Matcher(regex)::find, new KMP(regex)::find,
+                        new BoyerMoore(regex)::find);
+                for (Predicate<String> e : engines) {
+                    for (int i = 0; i < WARMUP; i++) sink += count(e, lines);
+                }
+                StringBuilder line = new StringBuilder(String.format(Locale.ROOT, "%-48s", '"' + regex + '"'));
+                for (int k = 0; k < names.length; k++) {
+                    Predicate<String> e = engines.get(k);
+                    double[] t = time(() -> count(e, lines), reps);
+                    out.printf(Locale.ROOT, "\"%s\",%d,%s,%d,%.4f,%.4f%n",
+                            regex, regex.length(), names[k], count(e, lines), mean(t), std(t));
+                    line.append(String.format(Locale.ROOT, " %s %7.2f ms", names[k], mean(t)));
+                }
+                java.util.regex.Matcher java = CorrectnessTest.toJavaPattern(regex).matcher("");
+                double[] t = time(() -> countJava(java, lines), reps);
+                out.printf(Locale.ROOT, "\"%s\",%d,java.util.regex,%d,%.4f,%.4f%n",
+                        regex, regex.length(), countJava(java, lines), mean(t), std(t));
+                line.append(String.format(Locale.ROOT, " java.util.regex %7.2f ms", mean(t)));
+                System.out.println(line);
+            }
+        }
+    }
+
     // ---- Helpers ----
 
     static int countOurs(Matcher m, List<String> lines) {
         int count = 0;
         for (String line : lines) if (m.find(line)) count++;
+        return count;
+    }
+
+    static int count(Predicate<String> find, List<String> lines) {
+        int count = 0;
+        for (String line : lines) if (find.test(line)) count++;
         return count;
     }
 
