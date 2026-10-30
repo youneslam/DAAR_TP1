@@ -2,8 +2,7 @@
 #
 #   make                  compile the sources and build the binary egrep.jar
 #   make run REGEX="S(a|g|r)*on" FILE=testbeds/babylon.txt
-#   make testbeds         download the Gutenberg books used by the tests
-#   make test             correctness tests (needs the testbeds)
+#   make test             correctness tests on the books in testbeds/
 #   make compare          compare our output with grep -E on every testbed
 #   make benchmark        performance tests, CSV files and charts in results/
 #   make clean            remove everything that was built
@@ -19,7 +18,7 @@ FILE   ?= testbeds/babylon.txt
 SOURCES = $(wildcard src/*.java)
 TESTS   = $(wildcard test/*.java)
 
-.PHONY: all build run testbeds test compare benchmark clean
+.PHONY: all build run test compare benchmark clean
 
 all: $(BIN)
 
@@ -34,9 +33,6 @@ $(BIN): $(OUT)/Egrep.class
 
 run: $(BIN)
 	$(JAVA) -jar $(BIN) "$(REGEX)" $(FILE)
-
-testbeds:
-	bash scripts/download_testbeds.sh
 
 test: $(SOURCES) $(TESTS)
 	mkdir -p $(OUT)

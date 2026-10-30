@@ -14,7 +14,6 @@ used by the tests and the performance comparison on regexes made only of letters
 ```bash
 make                                                        # builds the binary egrep.jar
 make run REGEX="S(a|g|r)*on" FILE=testbeds/babylon.txt      # or: java -jar egrep.jar "<regex>" <file>
-make testbeds                                               # downloads the test files
 make test                                                   # correctness tests
 make compare                                                # comparison with grep -E
 make benchmark                                              # performance tests, results in results/
@@ -47,11 +46,8 @@ Exit code: `0` if a line matched, `1` if none, `2` on error.
 
 ## Tests
 
-Download the test files (books from Project Gutenberg) into `testbeds/`:
-
-```bash
-bash scripts/download_testbeds.sh
-```
+The test files (7 books from Project Gutenberg) are already in `testbeds/`.
+They were downloaded with `bash scripts/download_testbeds.sh`.
 
 Correctness tests:
 
